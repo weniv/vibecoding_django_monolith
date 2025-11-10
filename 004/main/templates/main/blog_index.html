@@ -1,0 +1,72 @@
+<!-- main/templates/main/blog_index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블로그 메인</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        nav {
+            background-color: #333;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            margin-right: 10px;
+        }
+        nav a:hover {
+            background-color: #555;
+        }
+        h1 {
+            color: #333;
+        }
+        .post-list {
+            list-style: none;
+            padding: 0;
+        }
+        .post-list li {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .post-list a {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .post-list a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">홈</a>
+        <a href="/about">소개</a>
+        <a href="/contact">연락처</a>
+        <a href="/blog">블로그</a>
+    </nav>
+    <h1>블로그 메인 페이지</h1>
+    <ul class="post-list">
+        {% for post in posts %}
+        <li>
+            <a href="/blog/{{ post.id }}/">{{ post.title }}</a>
+            <p style="margin: 10px 0 0 0; color: #666;">작성일: {{ post.created_at|date:"Y년 m월 d일" }}</p>
+        </li>
+        {% empty %}
+        <li>게시글이 없습니다.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
