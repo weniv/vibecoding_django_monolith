@@ -1,0 +1,34 @@
+{% extends 'main/base.html' %}
+
+{% block title %}소개 - Django 블로그{% endblock %}
+
+{% block header_title %}소개{% endblock %}
+{% block header_subtitle %}Django CBV로 만든 블로그 프로젝트{% endblock %}
+
+{% block content %}
+<p class="lead">이것은 Django CBV(Class Based View)와 Bootstrap으로 만든 블로그입니다.</p>
+
+<h2 class="section-heading">주요 기능</h2>
+<p>다음과 같은 기능을 제공합니다:</p>
+<ul>
+    <li>회원가입 및 로그인/로그아웃</li>
+    <li>게시글 작성, 수정, 삭제</li>
+    <li>게시글 목록 조회 및 상세 보기</li>
+    <li>댓글 작성, 수정, 삭제</li>
+    <li>태그 기능</li>
+    <li>마크다운 지원</li>
+    <li>조회수 및 좋아요 기능</li>
+    <li>이미지 업로드 (프로필, 썸네일)</li>
+</ul>
+
+<h2 class="section-heading mt-4">기술 스택</h2>
+<ul>
+    <li><strong>Backend:</strong> Django 5.x</li>
+    <li><strong>Frontend:</strong> Bootstrap 5, Font Awesome</li>
+    <li><strong>Database:</strong> SQLite (개발용)</li>
+    <li><strong>기타:</strong> Markdown 지원, Pillow (이미지 처리)</li>
+</ul>
+
+<hr class="my-4" />
+<p class="text-muted">이 프로젝트는 Django 학습 목적으로 제작되었습니다.</p>
+{% endblock %}
