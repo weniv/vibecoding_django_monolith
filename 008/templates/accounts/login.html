@@ -1,0 +1,49 @@
+{% extends 'main/base.html' %}
+
+{% block title %}로그인 - Django 블로그{% endblock %}
+
+{% block header_title %}로그인{% endblock %}
+{% block header_subtitle %}블로그에 로그인하세요{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            아이디 또는 비밀번호가 올바르지 않습니다.
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.username.id_for_label }}" class="form-label">사용자명</label>
+                <input type="text" name="username" id="{{ form.username.id_for_label }}"
+                       class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.password.id_for_label }}" class="form-label">비밀번호</label>
+                <input type="password" name="password" id="{{ form.password.id_for_label }}"
+                       class="form-control" required>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> 로그인
+                </button>
+                <a href="{% url 'main:home' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> 취소
+                </a>
+            </div>
+        </form>
+
+        <hr class="my-4" />
+        <p class="text-center">
+            계정이 없으신가요? <a href="{% url 'accounts:signup' %}">회원가입</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

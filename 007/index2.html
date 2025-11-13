@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>요리 아이템 수집 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #gameUI {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        #scoreBoard {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            min-width: 250px;
+        }
+
+        .playerScore {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .playerName {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            min-width: 200px;
+        }
+
+        #controls h3 {
+            margin-bottom: 10px;
+            color: #ffd700;
+        }
+
+        #controls p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        #gameTitle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 1000;
+        }
+
+        #gameTitle h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #gameTitle p {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        #startButton {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            pointer-events: all;
+            transition: background 0.3s;
+        }
+
+        #startButton:hover {
+            background: #45a049;
+        }
+
+        #winnerMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            z-index: 1000;
+        }
+
+        #winnerMessage h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        #winnerMessage p {
+            font-size: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 게임 UI -->
+    <div id="gameUI">
+        <!-- 점수판 -->
+        <div id="scoreBoard">
+            <div class="playerScore" id="player1Score">
+                <span class="playerName" style="color: #ff6b6b;">🧑‍🍳 Player 1</span>
+                <span class="score">0</span>
+            </div>
+            <div class="playerScore" id="player2Score">
+                <span class="playerName" style="color: #4ecdc4;">🧑‍🍳 Player 2</span>
+                <span class="score">0</span>
+            </div>
+            <div class="playerScore" id="player3Score">
+                <span class="playerName" style="color: #95e1d3;">🧑‍🍳 Player 3</span>
+                <span class="score">0</span>
+            </div>
+        </div>
+
+        <!-- 조작법 -->
+        <div id="controls">
+            <h3>⌨️ Controls</h3>
+            <p>🔴 Player 1: W, A, S, D</p>
+            <p>🔵 Player 2: Arrow Keys</p>
+            <p>🟢 Player 3: I, J, K, L</p>
+            <hr style="margin: 10px 0; border-color: rgba(255,255,255,0.3);">
+            <p>🎯 Target: 100 points</p>
+        </div>
+    </div>
+
+    <!-- 시작 화면 -->
+    <div id="gameTitle">
+        <h1>🍳 요리 아이템 수집 게임</h1>
+        <p>3명의 요리사가 아이템을 수집하는 게임입니다!</p>
+        <p>100점을 먼저 달성하면 승리!</p>
+        <button id="startButton">게임 시작</button>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <script>
+        // ========== 게임 상태 ==========
+        const gameState = {
+            players: [],
+            items: [],
+            walls: [],
+            isRunning: false,
+            isStarted: false
+        };
+
+        // 키 입력 상태
+        const keys = {};
+
+        // 아이템 타입 정의
+        const itemTypes = [
+            { type: 'tomato', color: 0xff6347, points: 10, emoji: '🍅' },
+            { type: 'onion', color: 0xffd700, points: 15, emoji: '🧅' },
+            { type: 'carrot', color: 0xff8c00, points: 20, emoji: '🥕' },
+            { type: 'lettuce', color: 0x90ee90, points: 12, emoji: '🥬' }
+        ];
+
+        // 목표 점수
+        const TARGET_SCORE = 100;
+
+        // ========== Three.js 기본 설정 ==========
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
+
+        // 카메라 설정 (탑뷰)
+        const camera = new THREE.PerspectiveCamera(
+            60,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.set(0, 25, 15);
+        camera.lookAt(0, 0, 0);
+
+        // 렌더러 설정
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // ========== 조명 설정 ==========
+        function addLights() {
+            // 환경광
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // 방향광 (그림자)
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.left = -20;
+            directionalLight.shadow.camera.right = 20;
+            directionalLight.shadow.camera.top = 20;
+            directionalLight.shadow.camera.bottom = -20;
+            scene.add(directionalLight);
+        }
+
+        // ========== 맵 생성 ==========
+        function createFloor() {
+            const floorGeometry = new THREE.PlaneGeometry(20, 20);
+            const floorMaterial = new THREE.MeshStandardMaterial({
+                color: 0xe0e0e0,
+                roughness: 0.8
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = 0;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // 체크무늬 패턴
+            const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xdddddd);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+        }
+
+        function createWall(x, y, z, width, height, depth) {
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x8b4513,
+                roughness: 0.7
+            });
+            const wall = new THREE.Mesh(geometry, material);
+            wall.position.set(x, y, z);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            scene.add(wall);
+
+            gameState.walls.push(wall);
+            return wall;
+        }
+
+        function createBoundaryWalls() {
+            const wallHeight = 2;
+            const wallThickness = 0.5;
+            const mapSize = 20;
+
+            // 4개의 경계 벽
+            createWall(0, wallHeight/2, -mapSize/2, mapSize, wallHeight, wallThickness);
+            createWall(0, wallHeight/2, mapSize/2, mapSize, wallHeight, wallThickness);
+            createWall(-mapSize/2, wallHeight/2, 0, wallThickness, wallHeight, mapSize);
+            createWall(mapSize/2, wallHeight/2, 0, wallThickness, wallHeight, mapSize);
+        }
+
+        function createObstacles() {
+            // 중앙 카운터
+            createWall(0, 1, 0, 4, 2, 2);
+
+            // 왼쪽 위 테이블
+            createWall(-5, 0.5, -5, 2, 1, 2);
+
+            // 오른쪽 아래 테이블
+            createWall(5, 0.5, 5, 2, 1, 2);
+        }
+
+        // ========== 플레이어 생성 ==========
+        function createPlayer(x, z, color, controls, playerNum) {
+            // 플레이어 몸통 (원기둥)
+            const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 16);
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.5
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.set(x, 0.5, z);
+            body.castShadow = true;
+            scene.add(body);
+
+            // 요리사 모자 (원뿔)
+            const hatGeometry = new THREE.ConeGeometry(0.6, 0.8, 16);
+            const hatMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.3
+            });
+            const hat = new THREE.Mesh(hatGeometry, hatMaterial);
+            hat.position.set(x, 1.4, z);
+            hat.castShadow = true;
+            scene.add(hat);
+
+            // 플레이어 데이터
+            const player = {
+                body: body,
+                hat: hat,
+                position: { x: x, z: z },
+                speed: 0.15,
+                score: 0,
+                color: color,
+                controls: controls,
+                velocity: { x: 0, z: 0 },
+                playerNum: playerNum
+            };
+
+            gameState.players.push(player);
+            return player;
+        }
+
+        function createPlayers() {
+            // 플레이어 1 (빨강) - WASD
+            createPlayer(-7, -7, 0xff6b6b, {
+                up: 'w', down: 's', left: 'a', right: 'd'
+            }, 1);
+
+            // 플레이어 2 (파랑) - 화살표
+            createPlayer(7, -7, 0x4ecdc4, {
+                up: 'arrowup', down: 'arrowdown',
+                left: 'arrowleft', right: 'arrowright'
+            }, 2);
+
+            // 플레이어 3 (초록) - IJKL
+            createPlayer(0, 7, 0x95e1d3, {
+                up: 'i', down: 'k', left: 'j', right: 'l'
+            }, 3);
+        }
+
+        // ========== 키보드 입력 ==========
+        window.addEventListener('keydown', (event) => {
+            keys[event.key.toLowerCase()] = true;
+        });
+
+        window.addEventListener('keyup', (event) => {
+            keys[event.key.toLowerCase()] = false;
+        });
+
+        // ========== 플레이어 입력 처리 ==========
+        function handlePlayerInput(player) {
+            let moveX = 0;
+            let moveZ = 0;
+
+            if (keys[player.controls.up]) moveZ -= 1;
+            if (keys[player.controls.down]) moveZ += 1;
+            if (keys[player.controls.left]) moveX -= 1;
+            if (keys[player.controls.right]) moveX += 1;
+
+            // 대각선 이동 속도 정규화
+            if (moveX !== 0 && moveZ !== 0) {
+                const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+                moveX /= length;
+                moveZ /= length;
+            }
+
+            player.velocity.x = moveX * player.speed;
+            player.velocity.z = moveZ * player.speed;
+        }
+
+        // ========== 충돌 감지 ==========
+        function checkWallCollision(x, z) {
+            const playerRadius = 0.5;
+
+            for (let wall of gameState.walls) {
+                const wallBox = new THREE.Box3().setFromObject(wall);
+
+                const playerBox = new THREE.Box3(
+                    new THREE.Vector3(x - playerRadius, 0, z - playerRadius),
+                    new THREE.Vector3(x + playerRadius, 1, z + playerRadius)
+                );
+
+                if (wallBox.intersectsBox(playerBox)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // ========== 플레이어 업데이트 ==========
+        function updatePlayer(player) {
+            handlePlayerInput(player);
+
+            const newX = player.position.x + player.velocity.x;
+            const newZ = player.position.z + player.velocity.z;
+
+            if (!checkWallCollision(newX, newZ)) {
+                player.position.x = newX;
+                player.position.z = newZ;
+
+                player.body.position.x = newX;
+                player.body.position.z = newZ;
+                player.hat.position.x = newX;
+                player.hat.position.z = newZ;
+            }
+        }
+
+        function updatePlayers() {
+            gameState.players.forEach(player => {
+                updatePlayer(player);
+            });
+        }
+
+        // ========== 아이템 생성 ==========
+        function createItem(x, z, itemType) {
+            const geometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const material = new THREE.MeshStandardMaterial({
+                color: itemType.color,
+                emissive: itemType.color,
+                emissiveIntensity: 0.3,
+                roughness: 0.4
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, 0.3, z);
+            mesh.castShadow = true;
+            scene.add(mesh);
+
+            const item = {
+                mesh: mesh,
+                position: { x: x, z: z },
+                type: itemType.type,
+                points: itemType.points,
+                collected: false
+            };
+
+            gameState.items.push(item);
+            return item;
+        }
+
+        function spawnRandomItem() {
+            const mapSize = 18;
+            let x, z;
+            let validPosition = false;
+            let attempts = 0;
+
+            while (!validPosition && attempts < 50) {
+                x = (Math.random() - 0.5) * mapSize;
+                z = (Math.random() - 0.5) * mapSize;
+
+                if (!checkWallCollision(x, z)) {
+                    validPosition = true;
+                }
+                attempts++;
+            }
+
+            if (validPosition) {
+                const randomType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+                createItem(x, z, randomType);
+            }
+        }
+
+        function createInitialItems(count) {
+            for (let i = 0; i < count; i++) {
+                spawnRandomItem();
+            }
+        }
+
+        function animateItems() {
+            const time = Date.now() * 0.001;
+
+            gameState.items.forEach((item, index) => {
+                if (!item.collected) {
+                    item.mesh.rotation.y += 0.02;
+                    item.mesh.position.y = 0.3 + Math.sin(time * 2 + index) * 0.1;
+                }
+            });
+        }
+
+        // ========== 아이템 수집 ==========
+        function checkItemCollection(player) {
+            const collectionRadius = 0.8;
+
+            gameState.items.forEach(item => {
+                if (!item.collected) {
+                    const dx = player.position.x - item.position.x;
+                    const dz = player.position.z - item.position.z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+
+                    if (distance < collectionRadius) {
+                        collectItem(player, item);
+                    }
+                }
+            });
+        }
+
+        function collectItem(player, item) {
+            player.score += item.points;
+            item.collected = true;
+            scene.remove(item.mesh);
+
+            updateScoreUI();
+
+            setTimeout(() => {
+                spawnRandomItem();
+            }, 500);
+
+            console.log(`Player ${player.playerNum} collected ${item.type}! Score: ${player.score}`);
+        }
+
+        function checkAllCollections() {
+            gameState.players.forEach(player => {
+                checkItemCollection(player);
+            });
+        }
+
+        // ========== UI 업데이트 ==========
+        function updateScoreUI() {
+            gameState.players.forEach((player, index) => {
+                const scoreElement = document.querySelector(`#player${index + 1}Score .score`);
+                if (scoreElement) {
+                    scoreElement.textContent = player.score;
+                }
+            });
+        }
+
+        // ========== 승리 조건 ==========
+        function checkWinCondition() {
+            gameState.players.forEach((player) => {
+                if (player.score >= TARGET_SCORE) {
+                    endGame(player.playerNum);
+                }
+            });
+        }
+
+        function endGame(winnerNum) {
+            gameState.isRunning = false;
+
+            const message = document.createElement('div');
+            message.id = 'winnerMessage';
+
+            const playerColors = ['#ff6b6b', '#4ecdc4', '#95e1d3'];
+            message.innerHTML = `
+                <h1 style="color: ${playerColors[winnerNum - 1]}">🎉 Player ${winnerNum} Wins! 🎉</h1>
+                <p>Press R to Restart</p>
+            `;
+            document.body.appendChild(message);
+
+            window.addEventListener('keydown', (event) => {
+                if (event.key.toLowerCase() === 'r' && !gameState.isRunning) {
+                    location.reload();
+                }
+            });
+        }
+
+        // ========== 게임 초기화 ==========
+        function initGame() {
+            addLights(); // 조명 추가
+            createFloor(); // 바닥 생성
+            createBoundaryWalls(); // 4개 경계 벽 생성, createWall 함수 사용
+            createObstacles(); // 장애물 3개, createWall 함수 사용
+            createPlayers(); // 플레이어와 키 설정
+            createInitialItems(15); // 초기 아이템 15개 생성
+        }
+
+        // ========== 게임 루프 ==========
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
+
+            if (gameState.isRunning) {
+                updatePlayers();
+                animateItems();
+                checkAllCollections();
+                checkWinCondition();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // ========== 반응형 ==========
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ========== 게임 시작 ==========
+        document.getElementById('startButton').addEventListener('click', () => {
+            if (!gameState.isStarted) {
+                gameState.isStarted = true;
+                gameState.isRunning = true;
+                document.getElementById('gameTitle').classList.add('hidden');
+                console.log('게임 시작!');
+            }
+        });
+
+        // ========== 초기화 및 시작 ==========
+        initGame();
+        gameLoop();
+
+        console.log('요리 아이템 수집 게임이 로드되었습니다!');
+        console.log('게임 시작 버튼을 클릭하세요!');
+    </script>
+</body>
+</html>

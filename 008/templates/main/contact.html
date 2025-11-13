@@ -1,0 +1,27 @@
+{% extends 'main/base.html' %}
+
+{% block title %}연락처 - Django 블로그{% endblock %}
+
+{% block header_title %}연락처{% endblock %}
+{% block header_subtitle %}문의사항이 있으시면 연락주세요{% endblock %}
+
+{% block content %}
+<p class="lead">이 블로그에 대한 문의사항이 있으시면 아래 연락처로 연락주세요.</p>
+
+<div class="my-5">
+    <h3><i class="fas fa-envelope"></i> Email</h3>
+    <p>contact@example.com</p>
+</div>
+
+<div class="my-5">
+    <h3><i class="fab fa-github"></i> GitHub</h3>
+    <p><a href="https://github.com/example" target="_blank">https://github.com/example</a></p>
+</div>
+
+<hr class="my-4" />
+
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    이 연락처 정보는 예시입니다. 실제 운영 시 실제 연락처로 변경해주세요.
+</div>
+{% endblock %}

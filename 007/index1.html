@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js 종합 예제</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Three.js 종합 예제</h3>
+        <p>왼쪽: 회전하는 정육면체</p>
+        <p>중앙: 회전하는 구</p>
+        <p>오른쪽: 회전하는 원뿔</p>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <script>
+        // ===== Scene 생성 =====
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+
+        // ===== Camera 생성 =====
+        // PerspectiveCamera(시야각, 종횡비, 근거리, 원거리)
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        // 주석
+        // camera.position.set(x, y, z)
+        // z축을 늘리면 멀어지고, 줄이면 가까워집니다.
+        // y축을 늘리면 위로 올라가고, 줄이면 아래로 내려갑니다.
+        // x축을 늘리면 오른쪽으로 이동하고, 줄이면 왼쪽으로 이동합니다.
+        // camera.lookAt(x, y, z)
+        // 카메라가 바라보는 방향을 설정합니다.
+        // 한 번씩 수정을 해보세요.
+        camera.position.set(0, 3, 10); // 카메라를 위쪽에서 보도록 조정
+        camera.lookAt(0, 0, 0); // 원점을 바라보게 설정
+
+        // ===== Renderer 생성 =====
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // ===== 조명 추가 =====
+        // 환경광 (전체적인 밝기)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        // 방향광 (그림자 효과)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 10, 5);
+        scene.add(directionalLight);
+
+        // 점광 (색상 효과)
+        const pointLight = new THREE.PointLight(0x00ffff, 0.5, 50);
+        pointLight.position.set(-5, 5, 5);
+        scene.add(pointLight);
+
+        // ===== 정육면체 생성 =====
+        // THREE.BoxGeometry(가로, 세로, 깊이)
+        // THREE.MeshStandardMaterial(재질 속성)
+        // metalness: 금속성, roughness: 거칠기
+        const cubeGeometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const cubeMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6b6b,
+            metalness: 0.3,
+            roughness: 0.4
+        });
+        const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.set(-4, 0, 0);
+        scene.add(cube);
+
+        // ===== 구 생성 =====
+        // THREE.SphereGeometry(반지름, 가로 세그먼트 수, 세로 세그먼트 수)
+        const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const sphereMaterial = new THREE.MeshStandardMaterial({
+            color: 0x4ecdc4,
+            metalness: 0.5,
+            roughness: 0.2
+        });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.set(0, 0, 0);
+        scene.add(sphere);
+
+        // ===== 원뿔 생성 =====
+        // THREE.ConeGeometry(반지름, 높이, 세그먼트 수)
+        const coneGeometry = new THREE.ConeGeometry(1, 2, 32);
+        const coneMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffe66d,
+            metalness: 0.4,
+            roughness: 0.3
+        });
+        const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+        cone.position.set(4, 0, 0);
+        scene.add(cone);
+
+        // ===== 바닥 평면 생성 =====
+        const planeGeometry = new THREE.PlaneGeometry(20, 20);
+        const planeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2d3561,
+            side: THREE.DoubleSide,
+            roughness: 0.8
+        });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = -2;
+        scene.add(plane);
+
+        // ===== 애니메이션 함수 =====
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 정육면체 회전
+            // 숫자를 변경해보세요.
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            // 구 회전
+            sphere.rotation.y += 0.01;
+            sphere.rotation.z += 0.005;
+
+            // 원뿔 회전
+            cone.rotation.y += 0.02;
+
+            // 점광 움직이기 (원형 궤도)
+            const time = Date.now() * 0.001;
+            pointLight.position.x = Math.cos(time) * 8;
+            pointLight.position.z = Math.sin(time) * 8;
+
+            // 렌더링
+            renderer.render(scene, camera);
+        }
+
+        // ===== 반응형 설정 =====
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ===== 애니메이션 시작 =====
+        animate();
+
+        console.log('Three.js 애플리케이션이 시작되었습니다!');
+    </script>
+</body>
+</html>

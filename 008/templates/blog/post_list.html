@@ -1,0 +1,117 @@
+{% extends 'main/base.html' %}
+
+{% block title %}게시글 목록 - Django 블로그{% endblock %}
+
+{% block header_title %}게시글 목록{% endblock %}
+{% block header_subtitle %}다양한 주제의 글들을 만나보세요{% endblock %}
+
+{% block content %}
+<!-- 검색 및 글쓰기 버튼 -->
+<div class="mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-10">
+            <input type="text" name="search" value="{{ search }}"
+                   placeholder="제목 또는 내용 검색..."
+                   class="form-control">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-search"></i> 검색
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if user.is_authenticated %}
+<div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'blog:post_create' %}" class="btn btn-success">
+        <i class="fas fa-pen"></i> 새 글 작성
+    </a>
+</div>
+{% endif %}
+
+<!-- 전체 태그 목록 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-tags"></i> 태그</h5>
+        <div class="d-flex flex-wrap gap-2">
+            {% for tag in all_tags %}
+            <a href="{% url 'blog:post_by_tag' tag.slug %}" class="badge bg-info text-dark text-decoration-none">
+                {{ tag.name }}
+            </a>
+            {% empty %}
+            <p class="text-muted mb-0">태그가 없습니다.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 게시글 목록 -->
+{% if posts %}
+    {% for post in posts %}
+    <div class="post-preview">
+        <a href="{% url 'blog:post_detail' post.pk %}" class="text-decoration-none">
+            <h2 class="post-title">{{ post.title }}</h2>
+            {% if post.content %}
+            <h3 class="post-subtitle">{{ post.content|truncatewords:20|striptags }}</h3>
+            {% endif %}
+        </a>
+        <p class="post-meta">
+            작성자:
+            <a href="#!">{{ post.author.get_display_name }}</a>
+            · {{ post.created_at|date:"Y년 m월 d일" }}
+            · 조회수: {{ post.view_count }}
+            · 좋아요: {{ post.total_likes }}
+        </p>
+        {% if post.tags.all %}
+        <div class="mb-2">
+            {% for tag in post.tags.all %}
+            <a href="{% url 'blog:post_by_tag' tag.slug %}" class="badge bg-secondary text-decoration-none">
+                {{ tag.name }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <hr class="my-4" />
+    {% endfor %}
+
+    <!-- 페이지네이션 -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-center mb-4">
+        <nav aria-label="페이지 네비게이션">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">처음</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">이전</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                </li>
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">다음</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">마지막</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">게시글이 없습니다.</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'blog:post_create' %}" class="btn btn-primary mt-3">첫 글 작성하기</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
